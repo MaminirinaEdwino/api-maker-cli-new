@@ -57,6 +57,8 @@ func GetEndPointType() string {
 	return GetEndPointType()
 }
 
+
+
 func GetEndPointOperation() string {
 	operation := Scanner("Choose the operation for the endpoint : ")
 
@@ -78,11 +80,14 @@ func GetEndPointOperation() string {
 
 func GetAttrType() string {
 	var attr_type string
-	attr_type = Scanner("Choose the field type\n1. int\n2. string\n=> ")
+	attr_type = Scanner("Choose the field type\n1. int\n2. string\n3. bool\n4. float\n=> ")
 
 	switch attr_type {
 	case "string":
 	case "int":
+	case "bool":
+	case "float": 
+		return "float32"
 	default:
 		GetAttrType()
 	}
@@ -180,7 +185,7 @@ func PostQueryWriter(ep_name string, attrs []Attribut, sgbd string) string {
 	return query
 }
 
-func PutQueryWriter(ep_name string, attrs []Attribut, id int) string {
+func PutQueryWriter(ep_name string, attrs []Attribut) string {
 	query := ""
 	attr_list := ""
 	nbr_separator := len(attrs) - 1
@@ -191,12 +196,12 @@ func PutQueryWriter(ep_name string, attrs []Attribut, id int) string {
 			nbr_separator--
 		}
 	}
-	query = fmt.Sprintf("update %s set %s where id = %d returning * ", ep_name, attr_list, id)
+	query = fmt.Sprintf("update %s set %s where id = $%d returning * ", ep_name, attr_list, len(attrs))
 	return query
 }
 
-func DeleteQueryWriter(ep_name string, id int) string {
-	return fmt.Sprintf("delete from %s where id = %d", ep_name, id)
+func DeleteQueryWriter(ep_name string) string {
+	return fmt.Sprintf("delete from %s where id = $1", ep_name)
 }
 
 func WriteBodyType(endPoint EndPoint) string {
@@ -374,16 +379,50 @@ rows.Next()
 rows.Scan(%s)
 %s
 			}
-			`, ep.Name, ep.Name, dbCaller(), GetByIDQueryWriter(ep.Name, sgbd), ScanParamsWriter(ep), WriteResponseWriter())
+			`, ep.Name, ep.Name, dbCaller(), GetByIDQueryWriter(ep.Name, sgbd), ScanParamsWriter(ep), strings.Replace(WriteResponseWriter(), "res", "tmp", 1))
 			RouteList = append(RouteList, Route{route: fmt.Sprintf("GET /%s/{id}", ep.Name), handler: fmt.Sprintf("%sHandlerGetById", ep.Name)})
 
 			putHandler := fmt.Sprintf(`func %sHandlerPut(w http.ResponseWriter, r *http.Request){
+var body %sbodyType
+var tmp %sResponseType
 id := r.PathValue("id")
+decoder := json.NewDecoder(r.Body)
+err := decoder.Decode(&body)
+if err != nil {
+	log.Fatal(err)
+}
+%s
+rows, err := db.Query("%s", id)
+if err != nil {
+	log.Fatal(err)
+}
+rows.Next()
+rows.Scan(%s)
+%s
+}
 
-			}`, ep.Name)
+`, ep.Name, ep.Name, ep.Name, dbCaller(), PutQueryWriter(ep.Name, ep.Attribut ), ScanParamsWriter(ep),strings.Replace(WriteResponseWriter(), "res", "tmp", 1))
 			RouteList = append(RouteList, Route{route: fmt.Sprintf("PUT /%s/{id}", ep.Name), handler: fmt.Sprintf("%sHandlerPut", ep.Name)})
 
-			deleteHandler := fmt.Sprintf("func %sHandlerDelete(w http.ResponseWriter, r *http.Request){}\n", ep.Name)
+			deleteHandler := fmt.Sprintf(`func %sHandlerDelete(w http.ResponseWriter, r *http.Request){
+id := r.PathValue("id")
+type response struct{
+	Message string
+}
+%s
+
+rows,err := db.Query('%s', id)
+%s
+rows.Next()
+
+tmp := response{
+	Message: "users deleted",
+}
+
+%s
+
+}
+`, ep.Name, dbCaller(), DeleteQueryWriter(ep.Name), WriteErrorCheker("erreur lors du suppression"),WriteResponseWriter())
 			RouteList = append(RouteList, Route{route: fmt.Sprintf("DELETE /%s/{id}", ep.Name), handler: fmt.Sprintf("%sHandlerDelete", ep.Name)})
 
 			file.WriteString(insertHandler)
