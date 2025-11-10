@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"os"
 	"strings"
+
+	"github.com/rivo/tview"
 )
 
 type Attribut struct {
@@ -540,12 +542,16 @@ func CreateProjectConfig() {
 	WriteCode(projectname, sgbd, db_name, EndPointDB, EndPointNotDB)
 }
 
+func TableGeneratorPg(){
+	
+}
+
 func main() {
 	fmt.Println("API MAKER")
 
 	createProject := flag.Bool("create_project", false, "The command that create a new project Config")
 	generateProject := flag.Bool("generate_project", false, "Generate the project from the conf file")
-
+	showBox := flag.Bool("showBox", false, "Show a teste")
 	flag.Parse()
 
 	switch {
@@ -554,6 +560,11 @@ func main() {
 		CreateProjectConfig()
 	case *generateProject:
 		fmt.Println("Generate Project")
+	case *showBox:
+		box := tview.NewBox().SetBorder(true).SetTitle("Hello world")
+		if err := tview.NewApplication().SetRoot(box, true).Run(); err != nil {
+			panic(err)
+		}
 	default:
 		fmt.Println(`
 Use these command : 
