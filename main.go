@@ -324,16 +324,11 @@ func WriteCode(projectname string, sgbd string, db_name string, endPointDb []End
 			file.WriteString(WriteBodyType(ep))
 			file.WriteString(WriteResponseType(ep))
 			insertHandler := fmt.Sprintf(`
-
 func %sHandlePost(w http.ResponseWriter, r *http.Request){
 	%s
-
 	%s
-
 res, err := db.Exec("%s", %s)
-
 	%s
-	
 	%s
 }`+"\n",  
 			ep.Name, 
