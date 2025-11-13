@@ -87,3 +87,11 @@ mux := http.NewServeMux()
 Router(mux)
 fmt.Println("Server started at localhost:8000")
 log.Fatal(http.ListenAndServe(":8000", mux))}
+package main
+
+package main
+
+package main
+
+package main
+
