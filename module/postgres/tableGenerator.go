@@ -7,6 +7,10 @@ import (
 	"os"
 )
 
+func DataBaseNameGo(db_name string)string {
+	return fmt.Sprintf("const database_url = \"postgres://postgres:secret@localhost:5432/%s?sslmode=disable\"\n", db_name)
+}
+
 func WriteTableColumns(columns []basetype.Attribut) string {
 	script := ""
 	for idx, attr := range columns {

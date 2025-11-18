@@ -11,3 +11,8 @@ type EndPoint struct {
 	Operation string
 	Attribut  []Attribut
 }
+
+type Route struct {
+	Route   string
+	Handler string
+}

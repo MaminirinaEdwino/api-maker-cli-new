@@ -131,10 +131,7 @@ func GetEndPoints() ([]basetype.EndPoint, []basetype.EndPoint) {
 
 }
 
-type Route struct {
-	route   string
-	handler string
-}
+
 
 func GetQueryWriter(ep_name string, sgbd string) string {
 	var query string
@@ -166,12 +163,12 @@ func PostQueryWriter(ep_name string, attrs []basetype.Attribut, sgbd string) str
 		}
 	}
 	if sgbd == "postgresql" {
-		query = fmt.Sprintf("insert into %s (%s) values (%s) returning * ", ep_name, attr_list, prepare_params)
+		query = postgres.Insert(ep_name, attr_list, prepare_params)
 	}
 	return query
 }
 
-func PutQueryWriter(ep_name string, attrs []basetype.Attribut) string {
+func PutQueryWriter(ep_name string, attrs []basetype.Attribut, sgbd string) string {
 	query := ""
 	attr_list := ""
 	nbr_separator := len(attrs) - 1
@@ -182,12 +179,18 @@ func PutQueryWriter(ep_name string, attrs []basetype.Attribut) string {
 			nbr_separator--
 		}
 	}
-	query = fmt.Sprintf("update %s set %s where id = $%d returning * ", ep_name, attr_list, len(attrs))
+	if sgbd =="postgresql" {
+		query = postgres.Update(ep_name, attr_list, attrs)
+	}
+	
 	return query
 }
 
-func DeleteQueryWriter(ep_name string) string {
-	return fmt.Sprintf("delete from %s where id = $1", ep_name)
+func DeleteQueryWriter(ep_name string, sgbd string) string {
+	if sgbd == "postgresql" {
+		return postgres.Delete(ep_name)
+	}
+	return ""
 }
 
 func WriteBodyType(endPoint basetype.EndPoint) string {
@@ -261,7 +264,7 @@ func ScanParamsWriter(endPoint basetype.EndPoint) string {
 }
 
 func WriteCode(projectname string, sgbd string, db_name string, endPointDb []basetype.EndPoint, endPointNoDb []basetype.EndPoint) {
-	var RouteList []Route
+	var RouteList []basetype.Route
 	project_dir := projectname
 	fmt.Println("Start Writing the project code ")
 	fmt.Println("Creating project folder . . .")
@@ -298,7 +301,7 @@ func WriteCode(projectname string, sgbd string, db_name string, endPointDb []bas
 		// writing database simple config
 		if len(endPointDb) > 0 {
 			if sgbd == "postgresql" {
-				database_url := fmt.Sprintf("const database_url = \"postgres://postgres:secret@localhost:5432/%s?sslmode=disable\"\n", db_name)
+				database_url := postgres.DataBaseNameGo(db_name)
 				file.WriteString(database_url)
 			}
 		}
@@ -327,7 +330,7 @@ func WriteCode(projectname string, sgbd string, db_name string, endPointDb []bas
 				WriteErrorCheker("insert error"),
 				WriteResponseWriter())
 
-				RouteList = append(RouteList, Route{route: fmt.Sprintf("POST /%s", ep.Name), handler: fmt.Sprintf("%sHandlePost", ep.Name)})
+				RouteList = append(RouteList, basetype.Route{Route: fmt.Sprintf("POST /%s", ep.Name), Handler: fmt.Sprintf("%sHandlePost", ep.Name)})
 
 				selectHandler := fmt.Sprintf(`
 	func %sHandleGetAll(w http.ResponseWriter, r *http.Request){
@@ -352,7 +355,7 @@ func WriteCode(projectname string, sgbd string, db_name string, endPointDb []bas
 		ScanParamsWriter(ep),
 		WriteResponseWriter())
 
-				RouteList = append(RouteList, Route{route: fmt.Sprintf("GET /%s", ep.Name), handler: fmt.Sprintf("%sHandleGetAll", ep.Name)})
+				RouteList = append(RouteList, basetype.Route{Route: fmt.Sprintf("GET /%s", ep.Name), Handler: fmt.Sprintf("%sHandleGetAll", ep.Name)})
 
 				selectByIdHandler := fmt.Sprintf(`func %sHandlerGetById(w http.ResponseWriter, r *http.Request){
 	id := r.PathValue("id")
@@ -364,7 +367,7 @@ func WriteCode(projectname string, sgbd string, db_name string, endPointDb []bas
 	%s
 				}
 				`, ep.Name, ep.Name, dbCaller(), GetByIDQueryWriter(ep.Name, sgbd), ScanParamsWriter(ep), strings.Replace(WriteResponseWriter(), "res", "tmp", 1))
-				RouteList = append(RouteList, Route{route: fmt.Sprintf("GET /%s/{id}", ep.Name), handler: fmt.Sprintf("%sHandlerGetById", ep.Name)})
+				RouteList = append(RouteList, basetype.Route{Route: fmt.Sprintf("GET /%s/{id}", ep.Name), Handler: fmt.Sprintf("%sHandlerGetById", ep.Name)})
 
 				putHandler := fmt.Sprintf(`func %sHandlerPut(w http.ResponseWriter, r *http.Request){
 	var body %sbodyType
@@ -385,8 +388,8 @@ func WriteCode(projectname string, sgbd string, db_name string, endPointDb []bas
 	%s
 	}
 
-	`, ep.Name, ep.Name, ep.Name, dbCaller(), PutQueryWriter(ep.Name, ep.Attribut ), ScanParamsWriter(ep),strings.Replace(WriteResponseWriter(), "res", "tmp", 1))
-				RouteList = append(RouteList, Route{route: fmt.Sprintf("PUT /%s/{id}", ep.Name), handler: fmt.Sprintf("%sHandlerPut", ep.Name)})
+	`, ep.Name, ep.Name, ep.Name, dbCaller(), PutQueryWriter(ep.Name, ep.Attribut, sgbd), ScanParamsWriter(ep),strings.Replace(WriteResponseWriter(), "res", "tmp", 1))
+				RouteList = append(RouteList, basetype.Route{Route: fmt.Sprintf("PUT /%s/{id}", ep.Name), Handler: fmt.Sprintf("%sHandlerPut", ep.Name)})
 
 				deleteHandler := fmt.Sprintf(`func %sHandlerDelete(w http.ResponseWriter, r *http.Request){
 	id := r.PathValue("id")
@@ -394,20 +397,16 @@ func WriteCode(projectname string, sgbd string, db_name string, endPointDb []bas
 		Message string
 	}
 	%s
-
 	rows,err := db.Query('%s', id)
 	%s
 	rows.Next()
-
 	tmp := response{
 		Message: "users deleted",
 	}
-
 	%s
-
 	}
-	`, ep.Name, dbCaller(), DeleteQueryWriter(ep.Name), WriteErrorCheker("erreur lors du suppression"),WriteResponseWriter())
-				RouteList = append(RouteList, Route{route: fmt.Sprintf("DELETE /%s/{id}", ep.Name), handler: fmt.Sprintf("%sHandlerDelete", ep.Name)})
+	`, ep.Name, dbCaller(), DeleteQueryWriter(ep.Name, sgbd), WriteErrorCheker("erreur lors du suppression"),WriteResponseWriter())
+				RouteList = append(RouteList, basetype.Route{Route: fmt.Sprintf("DELETE /%s/{id}", ep.Name), Handler: fmt.Sprintf("%sHandlerDelete", ep.Name)})
 
 				file.WriteString(insertHandler)
 				file.WriteString(selectHandler)
@@ -417,25 +416,25 @@ func WriteCode(projectname string, sgbd string, db_name string, endPointDb []bas
 			}
 			if ep.Operation == "create" {
 				insertHandler := fmt.Sprintf("func %sHandlerPost(w http.ResponseWriter, r *http.Request){}\n", ep.Name)
-				RouteList = append(RouteList, Route{route: fmt.Sprintf("POST /%s", ep.Name), handler: fmt.Sprintf("%sHandlePost", ep.Name)})
+				RouteList = append(RouteList, basetype.Route{Route: fmt.Sprintf("POST /%s", ep.Name), Handler: fmt.Sprintf("%sHandlePost", ep.Name)})
 				file.WriteString(insertHandler)
 			}
 			if ep.Operation == "read" {
 				getAllHandler := fmt.Sprintf("func %sHandlerGetAll(w http.ResponseWriter, r *http.Request){}\n", ep.Name)
-				RouteList = append(RouteList, Route{route: fmt.Sprintf("GET /%s", ep.Name), handler: fmt.Sprintf("%sHandleGetAll", ep.Name)})
+				RouteList = append(RouteList, basetype.Route{Route: fmt.Sprintf("GET /%s", ep.Name), Handler: fmt.Sprintf("%sHandleGetAll", ep.Name)})
 				getByIdHandler := fmt.Sprintf("func %sHandlerGetById(w http.ResponseWriter, r *http.Request){}\n", ep.Name)
-				RouteList = append(RouteList, Route{route: fmt.Sprintf("GET /%s/{id}", ep.Name), handler: fmt.Sprintf("%sHandlerGetById", ep.Name)})
+				RouteList = append(RouteList, basetype.Route{Route: fmt.Sprintf("GET /%s/{id}", ep.Name), Handler: fmt.Sprintf("%sHandlerGetById", ep.Name)})
 				file.WriteString(getAllHandler)
 				file.WriteString(getByIdHandler)
 			}
 			if ep.Operation == "update" {
 				updateHandler := fmt.Sprintf("func %sHandlerPut(w http.ResponseWriter, r *http.Request){}\n", ep.Name)
-				RouteList = append(RouteList, Route{route: fmt.Sprintf("PUT /%s/{id}", ep.Name), handler: fmt.Sprintf("%sHandlerPut", ep.Name)})
+				RouteList = append(RouteList, basetype.Route{Route: fmt.Sprintf("PUT /%s/{id}", ep.Name), Handler: fmt.Sprintf("%sHandlerPut", ep.Name)})
 				file.WriteString(updateHandler)
 			}
 			if ep.Operation == "delete" {
 				deletehandler := fmt.Sprintf("func %sHandlerDelete(w http.ResponseWriter, r *http.Request){}\n", ep.Name)
-				RouteList = append(RouteList, Route{route: fmt.Sprintf("DELETE /%s/{id}", ep.Name), handler: fmt.Sprintf("%sHandlerDelete", ep.Name)})
+				RouteList = append(RouteList, basetype.Route{Route: fmt.Sprintf("DELETE /%s/{id}", ep.Name), Handler: fmt.Sprintf("%sHandlerDelete", ep.Name)})
 				file.WriteString(deletehandler)
 			}
 		}
@@ -443,19 +442,19 @@ func WriteCode(projectname string, sgbd string, db_name string, endPointDb []bas
 		for _, ep := range endPointNoDb {
 			if ep.Operation == "crud" {
 				insertHandler := fmt.Sprintf("func %sHandlePost(w http.ResponseWriter, r *http.Request){}\n", ep.Name)
-				RouteList = append(RouteList, Route{route: fmt.Sprintf("POST /%s", ep.Name), handler: fmt.Sprintf("%sHandlePost", ep.Name)})
+				RouteList = append(RouteList, basetype.Route{Route: fmt.Sprintf("POST /%s", ep.Name), Handler: fmt.Sprintf("%sHandlePost", ep.Name)})
 
 				selectHandler := fmt.Sprintf("func %sHandleGetAll(w http.ResponseWriter, r *http.Request){}\n", ep.Name)
-				RouteList = append(RouteList, Route{route: fmt.Sprintf("GET /%s", ep.Name), handler: fmt.Sprintf("%sHandleGetAll", ep.Name)})
+				RouteList = append(RouteList, basetype.Route{Route: fmt.Sprintf("GET /%s", ep.Name), Handler: fmt.Sprintf("%sHandleGetAll", ep.Name)})
 
 				selectByIdHandler := fmt.Sprintf("func %sHandlerGetById(w http.ResponseWriter, r *http.Request){}\n", ep.Name)
-				RouteList = append(RouteList, Route{route: fmt.Sprintf("GET /%s/{id}", ep.Name), handler: fmt.Sprintf("%sHandlerGetById", ep.Name)})
+				RouteList = append(RouteList, basetype.Route{Route: fmt.Sprintf("GET /%s/{id}", ep.Name), Handler: fmt.Sprintf("%sHandlerGetById", ep.Name)})
 
 				putHandler := fmt.Sprintf("func %sHandlerPut(w http.ResponseWriter, r *http.Request){}\n", ep.Name)
-				RouteList = append(RouteList, Route{route: fmt.Sprintf("PUT /%s/{id}", ep.Name), handler: fmt.Sprintf("%sHandlerPut", ep.Name)})
+				RouteList = append(RouteList, basetype.Route{Route: fmt.Sprintf("PUT /%s/{id}", ep.Name), Handler: fmt.Sprintf("%sHandlerPut", ep.Name)})
 
 				deleteHandler := fmt.Sprintf("func %sHandlerDelete(w http.ResponseWriter, r *http.Request){}\n", ep.Name)
-				RouteList = append(RouteList, Route{route: fmt.Sprintf("DELETE /%s/{id}", ep.Name), handler: fmt.Sprintf("%sHandlerDelete", ep.Name)})
+				RouteList = append(RouteList, basetype.Route{Route: fmt.Sprintf("DELETE /%s/{id}", ep.Name), Handler: fmt.Sprintf("%sHandlerDelete", ep.Name)})
 
 				file.WriteString(insertHandler)
 				file.WriteString(selectHandler)
@@ -465,25 +464,25 @@ func WriteCode(projectname string, sgbd string, db_name string, endPointDb []bas
 			}
 			if ep.Operation == "create" {
 				insertHandler := fmt.Sprintf("func %sHandlerPost(w http.ResponseWriter, r *http.Request){}\n", ep.Name)
-				RouteList = append(RouteList, Route{route: fmt.Sprintf("POST /%s", ep.Name), handler: fmt.Sprintf("%sHandlePost", ep.Name)})
+				RouteList = append(RouteList, basetype.Route{Route: fmt.Sprintf("POST /%s", ep.Name), Handler: fmt.Sprintf("%sHandlePost", ep.Name)})
 				file.WriteString(insertHandler)
 			}
 			if ep.Operation == "read" {
 				getAllHandler := fmt.Sprintf("func %sHandlerGetAll(w http.ResponseWriter, r *http.Request){}\n", ep.Name)
-				RouteList = append(RouteList, Route{route: fmt.Sprintf("GET /%s", ep.Name), handler: fmt.Sprintf("%sHandleGetAll", ep.Name)})
+				RouteList = append(RouteList, basetype.Route{Route: fmt.Sprintf("GET /%s", ep.Name), Handler: fmt.Sprintf("%sHandleGetAll", ep.Name)})
 				getByIdHandler := fmt.Sprintf("func %sHandlerGetById(w http.ResponseWriter, r *http.Request){}\n", ep.Name)
-				RouteList = append(RouteList, Route{route: fmt.Sprintf("GET /%s/{id}", ep.Name), handler: fmt.Sprintf("%sHandlerGetById", ep.Name)})
+				RouteList = append(RouteList, basetype.Route{Route: fmt.Sprintf("GET /%s/{id}", ep.Name), Handler: fmt.Sprintf("%sHandlerGetById", ep.Name)})
 				file.WriteString(getAllHandler)
 				file.WriteString(getByIdHandler)
 			}
 			if ep.Operation == "update" {
 				updateHandler := fmt.Sprintf("func %sHandlerPut(w http.ResponseWriter, r *http.Request){}\n", ep.Name)
-				RouteList = append(RouteList, Route{route: fmt.Sprintf("PUT /%s/{id}", ep.Name), handler: fmt.Sprintf("%sHandlerPut", ep.Name)})
+				RouteList = append(RouteList, basetype.Route{Route: fmt.Sprintf("PUT /%s/{id}", ep.Name), Handler: fmt.Sprintf("%sHandlerPut", ep.Name)})
 				file.WriteString(updateHandler)
 			}
 			if ep.Operation == "delete" {
 				deletehandler := fmt.Sprintf("func %sHandlerDelete(w http.ResponseWriter, r *http.Request){}\n", ep.Name)
-				RouteList = append(RouteList, Route{route: fmt.Sprintf("DELETE /%s/{id}", ep.Name), handler: fmt.Sprintf("%sHandlerDelete", ep.Name)})
+				RouteList = append(RouteList, basetype.Route{Route: fmt.Sprintf("DELETE /%s/{id}", ep.Name), Handler: fmt.Sprintf("%sHandlerDelete", ep.Name)})
 				file.WriteString(deletehandler)
 			}
 		}
@@ -491,7 +490,7 @@ func WriteCode(projectname string, sgbd string, db_name string, endPointDb []bas
 		fmt.Println("Generating all routes . . .")
 		file.WriteString("func Router(mux *http.ServeMux){\n")
 		for _, route := range RouteList {
-			fmt.Fprintf(file, "mux.HandleFunc(\"%s\", %s)\n", route.route, route.handler)
+			fmt.Fprintf(file, "mux.HandleFunc(\"%s\", %s)\n", route.Route, route.Handler)
 		}
 		file.WriteString("}\n")
 
