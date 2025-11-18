@@ -4,6 +4,7 @@ import (
 	"flag"
 	"fmt"
 	basetype "github/mameinirinaedwino/api-maker-cli/module/baseType"
+	goapi "github/mameinirinaedwino/api-maker-cli/module/go_api"
 	"github/mameinirinaedwino/api-maker-cli/module/postgres"
 	"os"
 	"strings"
@@ -228,14 +229,7 @@ json.NewEncoder(w).Encode(res)
 	`
 }
 
-func dbCaller() string {
-	return `
-db, err := sql.Open("postgres", database_url)
-if err != nil {
-	log.Fatal(err)
-}
-defer db.Close()`
-}
+
 
 func QueryParamWriter(attrs []basetype.Attribut) string {
 	params := ""
@@ -261,6 +255,13 @@ func ScanParamsWriter(endPoint basetype.EndPoint) string {
 		}
 	}
 	return attr_list
+}
+
+func DBCallerHandler(sgbd string) string {
+	if sgbd =="postgresql" {
+		return goapi.DbCallerPG()
+	}
+	return ""
 }
 
 func WriteCode(projectname string, sgbd string, db_name string, endPointDb []basetype.EndPoint, endPointNoDb []basetype.EndPoint) {
@@ -324,7 +325,7 @@ func WriteCode(projectname string, sgbd string, db_name string, endPointDb []bas
 	}`+"\n",
 				ep.Name,
 				WriteBodyDecodeur(ep.Name),
-				dbCaller(),
+				DBCallerHandler(sgbd),
 				PostQueryWriter(ep.Name, ep.Attribut, sgbd),
 				QueryParamWriter(ep.Attribut),
 				WriteErrorCheker("insert error"),
@@ -348,7 +349,7 @@ func WriteCode(projectname string, sgbd string, db_name string, endPointDb []bas
 	}
 	`,
 		ep.Name,
-		dbCaller(),
+		DBCallerHandler(sgbd),
 		ep.Name,
 		GetQueryWriter(ep.Name, sgbd),
 		ep.Name,
@@ -366,7 +367,7 @@ func WriteCode(projectname string, sgbd string, db_name string, endPointDb []bas
 	rows.Scan(%s)
 	%s
 				}
-				`, ep.Name, ep.Name, dbCaller(), GetByIDQueryWriter(ep.Name, sgbd), ScanParamsWriter(ep), strings.Replace(WriteResponseWriter(), "res", "tmp", 1))
+				`, ep.Name, ep.Name, DBCallerHandler(sgbd), GetByIDQueryWriter(ep.Name, sgbd), ScanParamsWriter(ep), strings.Replace(WriteResponseWriter(), "res", "tmp", 1))
 				RouteList = append(RouteList, basetype.Route{Route: fmt.Sprintf("GET /%s/{id}", ep.Name), Handler: fmt.Sprintf("%sHandlerGetById", ep.Name)})
 
 				putHandler := fmt.Sprintf(`func %sHandlerPut(w http.ResponseWriter, r *http.Request){
@@ -388,7 +389,7 @@ func WriteCode(projectname string, sgbd string, db_name string, endPointDb []bas
 	%s
 	}
 
-	`, ep.Name, ep.Name, ep.Name, dbCaller(), PutQueryWriter(ep.Name, ep.Attribut, sgbd), ScanParamsWriter(ep),strings.Replace(WriteResponseWriter(), "res", "tmp", 1))
+	`, ep.Name, ep.Name, ep.Name, DBCallerHandler(sgbd), PutQueryWriter(ep.Name, ep.Attribut, sgbd), ScanParamsWriter(ep),strings.Replace(WriteResponseWriter(), "res", "tmp", 1))
 				RouteList = append(RouteList, basetype.Route{Route: fmt.Sprintf("PUT /%s/{id}", ep.Name), Handler: fmt.Sprintf("%sHandlerPut", ep.Name)})
 
 				deleteHandler := fmt.Sprintf(`func %sHandlerDelete(w http.ResponseWriter, r *http.Request){
@@ -405,7 +406,7 @@ func WriteCode(projectname string, sgbd string, db_name string, endPointDb []bas
 	}
 	%s
 	}
-	`, ep.Name, dbCaller(), DeleteQueryWriter(ep.Name, sgbd), WriteErrorCheker("erreur lors du suppression"),WriteResponseWriter())
+	`, ep.Name, DBCallerHandler(sgbd), DeleteQueryWriter(ep.Name, sgbd), WriteErrorCheker("erreur lors du suppression"),WriteResponseWriter())
 				RouteList = append(RouteList, basetype.Route{Route: fmt.Sprintf("DELETE /%s/{id}", ep.Name), Handler: fmt.Sprintf("%sHandlerDelete", ep.Name)})
 
 				file.WriteString(insertHandler)
