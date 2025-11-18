@@ -1,6 +1,6 @@
 module github/mameinirinaedwino/api-maker-cli
 
-go 1.24.7
+go 1.24.9
 
 require (
 	github.com/gdamore/encoding v1.0.1 // indirect
@@ -14,4 +14,8 @@ require (
 	golang.org/x/text v0.31.0 // indirect
 )
 
-require github.com/clipperhouse/uax29/v2 v2.2.0 // indirect
+require (
+	github.com/MaminirinaEdwino/colorText v0.0.0-20251114181219-37764b2ceec0
+	// indirect
+	github.com/clipperhouse/uax29/v2 v2.2.0 // indirect
+)
