@@ -8,3 +8,10 @@ if err != nil {
 }
 defer db.Close()`
 }
+
+func DBCallerHandler(sgbd string) string {
+	if sgbd =="postgresql" {
+		return DbCallerPG()
+	}
+	return ""
+}
