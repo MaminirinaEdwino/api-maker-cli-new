@@ -135,20 +135,8 @@ func GetEndPoints() ([]basetype.EndPoint, []basetype.EndPoint) {
 
 
 
-func GetQueryWriter(ep_name string, sgbd string) string {
-	var query string
-	if sgbd == "postgresql" {
-		query = fmt.Sprintf("select * from %s ", ep_name)
-	}
-	if sgbd == "mysql" {
-		query = fmt.Sprintf("select * from %s ", ep_name)
-	}
-	return query
-}
 
-func GetByIDQueryWriter(ep_name string, sgbd string) string {
-	return GetQueryWriter(ep_name, sgbd) + " where id = $1"
-}
+
 
 func PostQueryWriter(ep_name string, attrs []basetype.Attribut, sgbd string) string {
 	var query string
@@ -170,23 +158,7 @@ func PostQueryWriter(ep_name string, attrs []basetype.Attribut, sgbd string) str
 	return query
 }
 
-func PutQueryWriter(ep_name string, attrs []basetype.Attribut, sgbd string) string {
-	query := ""
-	attr_list := ""
-	nbr_separator := len(attrs) - 1
-	for idx, attr := range attrs {
-		attr_list += fmt.Sprintf("%s = $%d", attr.Nom, idx)
-		if nbr_separator > 0 {
-			attr_list += " ,"
-			nbr_separator--
-		}
-	}
-	if sgbd =="postgresql" {
-		query = postgres.Update(ep_name, attr_list, attrs)
-	}
-	
-	return query
-}
+
 
 func DeleteQueryWriter(ep_name string, sgbd string) string {
 	if sgbd == "postgresql" {
@@ -213,30 +185,6 @@ func WriteResponseType(endPoint basetype.EndPoint) string {
 	responseBody = strings.Replace(responseBody, "bodyType", "responseType", 1)
 	return responseBody
 }
-
-
-
-
-
-
-
-
-
-
-func ScanParamsWriter(endPoint basetype.EndPoint) string {
-	attr_list := ""
-	nbr_params := len(endPoint.Attribut) - 1
-	for _, attr := range endPoint.Attribut {
-		attr_list += fmt.Sprintf("&tmp.%s", strings.ToUpper(attr.Nom))
-		if nbr_params > 0 {
-			attr_list += " ,"
-			nbr_params--
-		}
-	}
-	return attr_list
-}
-
-
 
 func WriteCode(projectname string, sgbd string, db_name string, endPointDb []basetype.EndPoint, endPointNoDb []basetype.EndPoint) {
 	var RouteList []basetype.Route
@@ -289,81 +237,19 @@ func WriteCode(projectname string, sgbd string, db_name string, endPointDb []bas
 			if ep.Operation == "crud" {
 				file.WriteString(WriteBodyType(ep))
 				file.WriteString(WriteResponseType(ep))
-				insertHandler := fmt.Sprintf(`
-	func %sHandlePost(w http.ResponseWriter, r *http.Request){
-		%s
-		%s
-	res, err := db.Exec("%s", %s)
-		%s
-		%s
-	}`+"\n",
-				ep.Name,
-				goapi.WriteBodyDecodeur(ep.Name),
-				goapi.DBCallerHandler(sgbd),
-				PostQueryWriter(ep.Name, ep.Attribut, sgbd),
-				goapi.QueryParamWriter(ep.Attribut),
-				utils.WriteErrorCheker("insert error"),
-				goapi.WriteResponseWriter())
+				insertHandler := goapi.InsertHandler(ep, sgbd)
 
 				RouteList = append(RouteList, basetype.Route{Route: fmt.Sprintf("POST /%s", ep.Name), Handler: fmt.Sprintf("%sHandlePost", ep.Name)})
 
-				selectHandler := fmt.Sprintf(`
-	func %sHandleGetAll(w http.ResponseWriter, r *http.Request){
-	%s
-	var res []%sresponseType
-
-	rows, err := db.Query("%s")
-
-	for rows.Next(){
-		var tmp %sresponseType
-		rows.Scan(%s)
-		res = append(res, tmp)
-	}
-	%s
-	}
-	`,
-		ep.Name,
-		goapi.DBCallerHandler(sgbd),
-		ep.Name,
-		GetQueryWriter(ep.Name, sgbd),
-		ep.Name,
-		ScanParamsWriter(ep),
-		goapi.WriteResponseWriter())
+				selectHandler := goapi.SelectHandler(ep, sgbd)
 
 				RouteList = append(RouteList, basetype.Route{Route: fmt.Sprintf("GET /%s", ep.Name), Handler: fmt.Sprintf("%sHandleGetAll", ep.Name)})
 
-				selectByIdHandler := fmt.Sprintf(`func %sHandlerGetById(w http.ResponseWriter, r *http.Request){
-	id := r.PathValue("id")
-	var tmp %sresponseType
-	%s
-	rows,err := db.Query("%s", id)
-	rows.Next()
-	rows.Scan(%s)
-	%s
-				}
-				`, ep.Name, ep.Name, goapi.DBCallerHandler(sgbd), GetByIDQueryWriter(ep.Name, sgbd), ScanParamsWriter(ep), strings.Replace(goapi.WriteResponseWriter(), "res", "tmp", 1))
+				selectByIdHandler := goapi.SelectByIdHandler(ep, sgbd)
+
 				RouteList = append(RouteList, basetype.Route{Route: fmt.Sprintf("GET /%s/{id}", ep.Name), Handler: fmt.Sprintf("%sHandlerGetById", ep.Name)})
 
-				putHandler := fmt.Sprintf(`func %sHandlerPut(w http.ResponseWriter, r *http.Request){
-	var body %sbodyType
-	var tmp %sResponseType
-	id := r.PathValue("id")
-	decoder := json.NewDecoder(r.Body)
-	err := decoder.Decode(&body)
-	if err != nil {
-		log.Fatal(err)
-	}
-	%s
-	rows, err := db.Query("%s", id)
-	if err != nil {
-		log.Fatal(err)
-	}
-	rows.Next()
-	rows.Scan(%s)
-	%s
-	}
-
-	`, ep.Name, ep.Name, ep.Name, goapi.DBCallerHandler(sgbd), PutQueryWriter(ep.Name, ep.Attribut, sgbd), ScanParamsWriter(ep),strings.Replace(goapi.WriteResponseWriter(), "res", "tmp", 1))
+				putHandler := goapi.PutHandler(ep, sgbd)
 				RouteList = append(RouteList, basetype.Route{Route: fmt.Sprintf("PUT /%s/{id}", ep.Name), Handler: fmt.Sprintf("%sHandlerPut", ep.Name)})
 
 				deleteHandler := fmt.Sprintf(`func %sHandlerDelete(w http.ResponseWriter, r *http.Request){
