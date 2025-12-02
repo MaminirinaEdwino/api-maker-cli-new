@@ -85,3 +85,21 @@ func InsertHandler(ep basetype.EndPoint, sgbd string) string {
 		utils.WriteErrorCheker("insert error"),
 		WriteResponseWriter())
 }
+
+func DeleteHandler(ep basetype.EndPoint, sgbd string) string {
+	return fmt.Sprintf(`func %sHandlerDelete(w http.ResponseWriter, r *http.Request){
+	id := r.PathValue("id")
+	type response struct{
+		Message string
+	}
+	%s
+	rows,err := db.Query('%s', id)
+	%s
+	rows.Next()
+	tmp := response{
+		Message: "users deleted",
+	}
+	%s
+	}
+	`, ep.Name, DBCallerHandler(sgbd), DeleteQueryWriter(ep.Name, sgbd), utils.WriteErrorCheker("erreur lors du suppression"),WriteResponseWriter())
+}

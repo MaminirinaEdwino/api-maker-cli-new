@@ -133,40 +133,6 @@ func GetEndPoints() ([]basetype.EndPoint, []basetype.EndPoint) {
 
 }
 
-
-
-
-
-
-func PostQueryWriter(ep_name string, attrs []basetype.Attribut, sgbd string) string {
-	var query string
-	attr_list := ""
-	prepare_params := ""
-	nbr_separator := len(attrs) - 1
-	for idx, attr := range attrs {
-		attr_list += attr.Nom
-		prepare_params += fmt.Sprintf("$%d", idx)
-		if nbr_separator > 0 {
-			attr_list += " ,"
-			prepare_params += " ,"
-			nbr_separator--
-		}
-	}
-	if sgbd == "postgresql" {
-		query = postgres.Insert(ep_name, attr_list, prepare_params)
-	}
-	return query
-}
-
-
-
-func DeleteQueryWriter(ep_name string, sgbd string) string {
-	if sgbd == "postgresql" {
-		return postgres.Delete(ep_name)
-	}
-	return ""
-}
-
 func WriteBodyType(endPoint basetype.EndPoint) string {
 	var AttrList string
 	for _, attr := range endPoint.Attribut {
@@ -186,20 +152,26 @@ func WriteResponseType(endPoint basetype.EndPoint) string {
 	return responseBody
 }
 
-func WriteCode(projectname string, sgbd string, db_name string, endPointDb []basetype.EndPoint, endPointNoDb []basetype.EndPoint) {
+func WriteCode(
+	projectname string, 
+	sgbd string, 
+	db_name string, 
+	endPointDb []basetype.EndPoint, 
+	endPointNoDb []basetype.EndPoint,
+	) {
+		
 	var RouteList []basetype.Route
 	project_dir := projectname
 	fmt.Println("Start Writing the project code ")
 	fmt.Println("Creating project folder . . .")
 	os.Mkdir(project_dir, os.ModePerm)
 	file, err := os.OpenFile(project_dir+"/main.go", os.O_CREATE|os.O_APPEND|os.O_RDWR, 0644)
-		if err != nil {
-		panic(err)
-	}
+
+	utils.ErrorChecker(err)
+
 	tableScript, err := os.OpenFile(project_dir+"/database.sql", os.O_CREATE|os.O_TRUNC|os.O_RDWR, os.ModePerm)
-	if err != nil {
-		panic(err)
-	}
+	utils.ErrorChecker(err)
+
 	file.WriteString("package main\n\n")
 
 	fmt.Println("Including all necessary package . . .")
@@ -252,21 +224,8 @@ func WriteCode(projectname string, sgbd string, db_name string, endPointDb []bas
 				putHandler := goapi.PutHandler(ep, sgbd)
 				RouteList = append(RouteList, basetype.Route{Route: fmt.Sprintf("PUT /%s/{id}", ep.Name), Handler: fmt.Sprintf("%sHandlerPut", ep.Name)})
 
-				deleteHandler := fmt.Sprintf(`func %sHandlerDelete(w http.ResponseWriter, r *http.Request){
-	id := r.PathValue("id")
-	type response struct{
-		Message string
-	}
-	%s
-	rows,err := db.Query('%s', id)
-	%s
-	rows.Next()
-	tmp := response{
-		Message: "users deleted",
-	}
-	%s
-	}
-	`, ep.Name, goapi.DBCallerHandler(sgbd), DeleteQueryWriter(ep.Name, sgbd), utils.WriteErrorCheker("erreur lors du suppression"),goapi.WriteResponseWriter())
+				deleteHandler := goapi.DeleteHandler(ep, sgbd)
+
 				RouteList = append(RouteList, basetype.Route{Route: fmt.Sprintf("DELETE /%s/{id}", ep.Name), Handler: fmt.Sprintf("%sHandlerDelete", ep.Name)})
 
 				file.WriteString(insertHandler)

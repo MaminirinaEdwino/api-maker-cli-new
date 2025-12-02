@@ -87,3 +87,10 @@ func PutQueryWriter(ep_name string, attrs []basetype.Attribut, sgbd string) stri
 	
 	return query
 }
+
+func DeleteQueryWriter(ep_name string, sgbd string) string {
+	if sgbd == "postgresql" {
+		return postgres.Delete(ep_name)
+	}
+	return ""
+}
