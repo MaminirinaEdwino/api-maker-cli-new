@@ -10,7 +10,7 @@ import (
 func PutHandler(ep basetype.EndPoint, sgbd string)string{
 	return fmt.Sprintf(`func %sHandlerPut(w http.ResponseWriter, r *http.Request){
 	var body %sbodyType
-	var tmp %sResponseType
+	var res %sresponseType
 	id := r.PathValue("id")
 	decoder := json.NewDecoder(r.Body)
 	err := decoder.Decode(&body)
@@ -93,7 +93,7 @@ func DeleteHandler(ep basetype.EndPoint, sgbd string) string {
 		Message string
 	}
 	%s
-	rows,err := db.Query('%s', id)
+	rows,err := db.Query("%s", id)
 	%s
 	rows.Next()
 	tmp := response{
