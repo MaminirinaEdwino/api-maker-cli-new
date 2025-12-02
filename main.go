@@ -14,13 +14,7 @@ import (
 	"github.com/rivo/tview"
 )
 
-// Fonction qui scanne le saisie user
-func Scanner(label string) string {
-	var tmp string
-	fmt.Print(label)
-	fmt.Scanln(&tmp)
-	return tmp
-}
+
 
 func GetSGBD() string {
 	var sgbd string
@@ -38,7 +32,7 @@ func GetSGBD() string {
 }
 
 func GetEndPointType() string {
-	typeEndPoint := Scanner("Choose the type of the endPoint \n" + "Endpoint that Interact with db or not (db / notdb) : ")
+	typeEndPoint := utils.Scanner("Choose the type of the endPoint \n" + "Endpoint that Interact with db or not (db / notdb) : ")
 	switch typeEndPoint {
 	case "db":
 		return "db"
@@ -49,7 +43,7 @@ func GetEndPointType() string {
 }
 
 func GetEndPointOperation() string {
-	operation := Scanner("Choose the operation for the endpoint : ")
+	operation := utils.Scanner("Choose the operation for the endpoint : ")
 
 	switch operation {
 	case "create":
@@ -68,7 +62,7 @@ func GetEndPointOperation() string {
 }
 
 func GetAttrType() string {
-	var attr_type string = Scanner("Choose the field type\n1. int\n2. string\n3. bool\n4. float\n=> ")
+	var attr_type string = utils.Scanner("Choose the field type\n1. int\n2. string\n3. bool\n4. float\n=> ")
 	switch attr_type {
 	case "string":
 	case "int":
@@ -86,11 +80,11 @@ func GetEndPointAttributes() []basetype.Attribut {
 	var attr_list []basetype.Attribut
 	var temp basetype.Attribut
 
-	temp.Nom = Scanner("Enter a attribute Name : ")
+	temp.Nom = utils.Scanner("Enter a attribute Name : ")
 	for temp.Nom != "" {
 		temp.Type = GetAttrType()
 		attr_list = append(attr_list, temp)
-		temp.Nom = Scanner("Enter a attribute Name : ")
+		temp.Nom = utils.Scanner("Enter a attribute Name : ")
 	}
 
 	return attr_list
@@ -104,7 +98,7 @@ func GetEndPoints() ([]basetype.EndPoint, []basetype.EndPoint) {
 	var operation string
 	var attribute []basetype.Attribut
 
-	nameEndPoint = Scanner("Enter endPoint name : ")
+	nameEndPoint = utils.Scanner("Enter endPoint name : ")
 	fmt.Println(nameEndPoint)
 
 	for nameEndPoint != "" {
@@ -125,7 +119,7 @@ func GetEndPoints() ([]basetype.EndPoint, []basetype.EndPoint) {
 			endPointNoDb = append(endPointNoDb, endPoint)
 		}
 		fmt.Println(endPoint)
-		nameEndPoint = Scanner("Enter endPoint name : ")
+		nameEndPoint = utils.Scanner("Enter endPoint name : ")
 	}
 
 	//get endPoint
@@ -159,7 +153,7 @@ func WriteCode(
 	endPointDb []basetype.EndPoint, 
 	endPointNoDb []basetype.EndPoint,
 	) {
-		
+
 	var RouteList []basetype.Route
 	project_dir := projectname
 	fmt.Println("Start Writing the project code ")
@@ -326,11 +320,11 @@ func CreateProjectConfig() {
 	var EndPointDB []basetype.EndPoint
 	var EndPointNotDB []basetype.EndPoint
 
-	projectname = Scanner("Enter the name of your api : ")
+	projectname = utils.Scanner("Enter the name of your api : ")
 	fmt.Println(projectname)
 	sgbd = GetSGBD()
 	fmt.Println("SGBD : " + sgbd)
-	db_name = Scanner("Enter the name of the database :")
+	db_name = utils.Scanner("Enter the name of the database :")
 	fmt.Println(db_name)
 
 	fmt.Println(len(EndPointDB))

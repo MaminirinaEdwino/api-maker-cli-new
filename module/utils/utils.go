@@ -17,3 +17,11 @@ func ErrorChecker(err error) {
 		panic(err)
 	}
 }
+
+// Fonction qui scanne le saisie user
+func Scanner(label string) string {
+	var tmp string
+	fmt.Print(label)
+	fmt.Scanln(&tmp)
+	return tmp
+}
