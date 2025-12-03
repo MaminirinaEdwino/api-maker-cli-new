@@ -1,0 +1,18 @@
+func {{ .EndPointName }}HandlerPut(w http.ResponseWriter, r *http.Request){
+	var body {{ .EndPointName }}bodyType
+	var res {{ .EndPointName }}responseType
+	id := r.PathValue("id")
+	decoder := json.NewDecoder(r.Body)
+	err := decoder.Decode(&body)
+	if err != nil {
+		log.Fatal(err)
+	}
+	{{ .DbCallerHandler }}
+	rows, err := db.Query("{{ .PutQuery }}", id)
+	if err != nil {
+		log.Fatal(err)
+	}
+	rows.Next()
+	rows.Scan({{ .ScanParams }})
+	{{ .ResponseWriter }}
+}

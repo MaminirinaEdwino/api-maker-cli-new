@@ -1,46 +1,57 @@
 package goapi
 
 import (
+	"bytes"
 	"fmt"
 	basetype "github/mameinirinaedwino/api-maker-cli/module/baseType"
 	"github/mameinirinaedwino/api-maker-cli/module/utils"
 	"strings"
+	"text/template"
+
 )
 
 func PutHandler(ep basetype.EndPoint, sgbd string)string{
-	return fmt.Sprintf(`func %sHandlerPut(w http.ResponseWriter, r *http.Request){
-	var body %sbodyType
-	var res %sresponseType
-	id := r.PathValue("id")
-	decoder := json.NewDecoder(r.Body)
-	err := decoder.Decode(&body)
-	if err != nil {
-		log.Fatal(err)
+	tmp, err := template.ParseFiles("module/go_api/templates/putHandler.gotmp")
+	utils.ErrorChecker(err)
+	var tmpBuffer bytes.Buffer
+	data := struct{
+		EndPointName string
+		DbCallerHandler string
+		PutQuery string
+		ScanParams string
+		ResponseWriter string
+	}{
+		EndPointName: ep.Name,
+		DbCallerHandler: DBCallerHandler(sgbd),
+		PutQuery: PutQueryWriter(ep.Name, ep.Attribut, sgbd),
+		ScanParams: ScanParamsWriter(ep),
+		ResponseWriter: strings.Replace(WriteResponseWriter(), "res", "tmp", 1),
 	}
-	%s
-	rows, err := db.Query("%s", id)
-	if err != nil {
-		log.Fatal(err)
-	}
-	rows.Next()
-	rows.Scan(%s)
-	%s
-	}
-
-	`, ep.Name, ep.Name, ep.Name, DBCallerHandler(sgbd), PutQueryWriter(ep.Name, ep.Attribut, sgbd), ScanParamsWriter(ep),strings.Replace(WriteResponseWriter(), "res", "tmp", 1))
+	err = tmp.Execute(&tmpBuffer, data)
+	utils.ErrorChecker(err)
+	return tmpBuffer.String()
 }
 
 func SelectByIdHandler(ep basetype.EndPoint, sgbd string)string {
-	return fmt.Sprintf(`func %sHandlerGetById(w http.ResponseWriter, r *http.Request){
-	id := r.PathValue("id")
-	var tmp %sresponseType
-	%s
-	rows,err := db.Query("%s", id)
-	rows.Next()
-	rows.Scan(%s)
-	%s
-				}
-				`, ep.Name, ep.Name, DBCallerHandler(sgbd), GetByIDQueryWriter(ep.Name, sgbd), ScanParamsWriter(ep), strings.Replace(WriteResponseWriter(), "res", "tmp", 1))
+	var tmpBuffer bytes.Buffer
+	tmp, err := template.ParseFiles("module/go_api/templates/selectByIdHandler.gotmp")
+	utils.ErrorChecker(err)
+	data := struct{
+		EndPointName string
+		DbCallerHandler string
+		SelectByIdQuery string
+		ScanParams string
+		ResponseWriter string
+	}{
+		EndPointName: ep.Name,
+		DbCallerHandler: DBCallerHandler(sgbd),
+		SelectByIdQuery: GetByIDQueryWriter(ep.Name, sgbd),
+		ScanParams: ScanParamsWriter(ep),
+		ResponseWriter: strings.Replace(WriteResponseWriter(), "res", "tmp", 1),
+	}
+	err = tmp.Execute(&tmpBuffer, data)
+	utils.ErrorChecker(err)
+	return tmpBuffer.String()
 }
 
 func SelectHandler(ep basetype.EndPoint, sgbd string) string {
