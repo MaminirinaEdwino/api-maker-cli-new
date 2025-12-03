@@ -66,8 +66,8 @@ func WriteCode(
 			if ep.Operation == "crud" {
 				file.WriteString(WriteBodyType(ep))
 				file.WriteString(WriteResponseType(ep))
-				insertHandler := goapi.InsertHandler(ep, sgbd)
 
+				insertHandler := goapi.InsertHandler(ep, sgbd)
 				RouteList = append(RouteList, basetype.Route{Route: fmt.Sprintf("POST /%s", ep.Name), Handler: fmt.Sprintf("%sHandlePost", ep.Name)})
 
 				selectHandler := goapi.SelectHandler(ep, sgbd)
