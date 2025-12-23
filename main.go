@@ -3,8 +3,9 @@ package main
 import (
 	"flag"
 	"fmt"
-	"github/mameinirinaedwino/api-maker-cli/module/apimaker"
-	"github/mameinirinaedwino/api-maker-cli/module/utils"
+	"github/MaminirinaEdwino/api-maker-cli/src/apimaker"
+	"github/MaminirinaEdwino/api-maker-cli/src/utils"
+
 	colortext "github.com/MaminirinaEdwino/colorText"
 )
 

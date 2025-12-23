@@ -1,9 +1,0 @@
-func {{ .EndPointName }}HandlerGetById(w http.ResponseWriter, r *http.Request){
-	id := r.PathValue("id")
-	var tmp {{ .EndPointName }}responseType
-	{{ .DbCallerHandler }}
-	rows,err := db.Query("{{ .SelectByIdQuery }}", id)
-	rows.Next()
-	rows.Scan({{ .ScanParams }})
-	{{ .ResponseWriter }}
-}

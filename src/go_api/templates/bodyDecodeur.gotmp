@@ -1,0 +1,4 @@
+var body {{ .EndPointName }}bodyType 
+decoder := json.NewDecoder(r.Body) 
+err := decoder.Decode(&body)
+{{ .ErrorChecker }}

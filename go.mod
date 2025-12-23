@@ -1,4 +1,4 @@
-module github/mameinirinaedwino/api-maker-cli
+module github/MaminirinaEdwino/api-maker-cli
 
 go 1.24.9
 
