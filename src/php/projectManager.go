@@ -147,11 +147,18 @@ func CreateWebAppProject() {
 		case "new_component":
 			components = append(components, createComponents())
 		case "delete_component":
+			componentName := utils.Scanner("Component name : ")
+			components = deleteComponent(components, componentName)
 		case "new_page":
 			pages = append(pages, createPage())
+		case "delete_page":
+			pageName := utils.Scanner("Page name : ")
+			pages = deletePage(pages, pageName)
 		case "new_model":
 			model = append(model, createModel())
 		case "delete_model":
+			modelName := utils.Scanner("Model name : ")
+			model = deleteModel(model, modelName)
 		}
 	}
 	fmt.Println(projectName)
