@@ -30,6 +30,7 @@ func createPage() basetype.Page {
 		case "htmltag":
 			tag := getHtmlTag()
 			page.Content = append(page.Content, tag.GetHtmlTag())
+			contentType = ""
 		}
 	}
 
@@ -38,10 +39,9 @@ func createPage() basetype.Page {
 
 func createComponents() basetype.Component {
 	var component basetype.Component
-
 	component.Name = utils.Scanner("Nom du composant")
-	contentType := ""
-	for contentType == "" {
+	contentType := "content"
+	for contentType != "" {
 		contentType = utils.Scanner("Content Type : ")
 		switch contentType {
 		case "htmltag":
@@ -53,8 +53,32 @@ func createComponents() basetype.Component {
 	return component
 }
 
-func createModel() {
+func createModel() basetype.Model {
+	var model basetype.Model
+	model.Name = utils.Scanner("Nom du model : ")
+	attributName := "attr"
+	for attributName != "" {
+		attributName = utils.Scanner("Nom attribut : ")
+		if attributName != "" {
+			attributType := utils.Scanner("Type attribut : ")
+			attr := basetype.Attribut{
+				Nom:  attributName,
+				Type: attributType,
+			}
+			model.Attribut = append(model.Attribut, attr)
+		}
+	}
+	return model
+}
 
+func deleteModel(modelList []basetype.Model, modelName string) []basetype.Model {
+	var tmp []basetype.Model
+	for m := range modelList {
+		if modelList[m].Name != modelName {
+			tmp = append(tmp, modelList[m])
+		}
+	}
+	return tmp
 }
 
 func setDbname() string {
@@ -87,26 +111,27 @@ func getAction() string {
 func CreateWebAppProject() {
 	var projectName string
 	var Dbname string
-	var model []string
+	var model []basetype.Model
 	var pages []basetype.Page
-	var components []string
+	var components []basetype.Component
 
 	fmt.Println("Create a PHP WEB App")
 	action := ""
-	for action != getAction() {
+	for action == "" {
+		action = getAction()
 		switch action {
 		case "project_name":
 			projectName = setProjectName()
 		case "db_name":
 			Dbname = setDbname()
 		case "new_component":
+			components = append(components, createComponents())
 		case "delete_component":
 		case "new_page":
 			pages = append(pages, createPage())
 		case "new_model":
+			model = append(model, createModel())
 		case "delete_model":
-		case "quit":
-			break
 		}
 	}
 	fmt.Println(projectName)
