@@ -19,6 +19,7 @@ class TemplateRender{
 }	
 `)
 }
+
 func CreateUtilsFile(projectName string){
 	file, err := os.Create(projectName+"/scr/core/utils/relativeRoutes.php")
 	utils.ErrorChecker(err)
@@ -98,4 +99,8 @@ func CreateProjectStructure(Projectname string){
 	utils.ErrorChecker(err)
 	err = os.MkdirAll(Projectname+"/src/views", os.ModePerm)
 	utils.ErrorChecker(err)
+
+	CreateTemplateRendererFile(Projectname)
+	CreateFileUploaderFile(Projectname)
+	CreateUtilsFile(Projectname)
 }
