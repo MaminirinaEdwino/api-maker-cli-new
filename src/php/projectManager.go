@@ -170,4 +170,8 @@ func CreateWebAppProject() {
 	CreateProjectStructure(projectName)
 	CreateDBFile(Dbname, projectName, model)
 	CreateMigrateDBFile(projectName)
+	for _, mod := range model {
+		CreateModelFile(projectName, mod)
+	}
+	
 }
