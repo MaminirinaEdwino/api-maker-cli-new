@@ -167,4 +167,5 @@ func CreateWebAppProject() {
 	fmt.Println(components)
 
 	CreateProjectStructure(projectName)
+	CreateDBFile(Dbname, projectName, model)
 }
