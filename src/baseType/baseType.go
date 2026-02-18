@@ -38,3 +38,8 @@ type Page struct {
 	Name    string
 	Content []string
 }
+
+type Component struct {
+	Name string
+	Content []string
+}

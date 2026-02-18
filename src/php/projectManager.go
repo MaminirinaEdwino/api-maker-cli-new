@@ -36,12 +36,21 @@ func createPage() basetype.Page {
 	return page
 }
 
-func getComponents() {
+func createComponents() basetype.Component {
+	var component basetype.Component
 
-}
+	component.Name = utils.Scanner("Nom du composant")
+	contentType := ""
+	for contentType == "" {
+		contentType = utils.Scanner("Content Type : ")
+		switch contentType {
+		case "htmltag":
+			tag := getHtmlTag()
+			component.Content = append(component.Content, tag.GetHtmlTag())
+		}
+	}
 
-func createComponents() {
-
+	return component
 }
 
 func createModel() {
@@ -50,7 +59,7 @@ func createModel() {
 
 func setDbname() string {
 	dbName := ""
-	for dbName == ""{
+	for dbName == "" {
 		fmt.Print("Entrer le nom de la base de donnée : ")
 		fmt.Scanln(&dbName)
 	}
@@ -59,7 +68,7 @@ func setDbname() string {
 
 func setProjectName() string {
 	projectName := ""
-	for projectName == ""{
+	for projectName == "" {
 		fmt.Printf("Entrer le nom du projet : ")
 		fmt.Scanln(&projectName)
 	}
@@ -79,9 +88,8 @@ func CreateWebAppProject() {
 	var projectName string
 	var Dbname string
 	var model []string
-	var pages []string
+	var pages []basetype.Page
 	var components []string
-	var model []string
 
 	fmt.Println("Create a PHP WEB App")
 	action := ""
@@ -90,14 +98,19 @@ func CreateWebAppProject() {
 		case "project_name":
 			projectName = setProjectName()
 		case "db_name":
-			Dbname = setDbname() 
+			Dbname = setDbname()
 		case "new_component":
 		case "delete_component":
 		case "new_page":
+			pages = append(pages, createPage())
 		case "new_model":
 		case "delete_model":
 		case "quit":
 			break
 		}
 	}
+	fmt.Println(projectName)
+	fmt.Println(Dbname)
+	fmt.Println(model)
+	fmt.Println(components)
 }
