@@ -16,3 +16,12 @@ type Route struct {
 	Route   string
 	Handler string
 }
+
+type Model struct{
+	Name string
+	Attribut []Attribut
+}
+
+type Page struct{
+	
+}

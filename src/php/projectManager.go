@@ -8,6 +8,7 @@ func CreateWebAppProject(){
 	var model []string
 	var pages []string
 	var components []string
-	fmt.Println("Create a PHP WEB App")
+	var model []string 
 
+	fmt.Println("Create a PHP WEB App")
 }
