@@ -1,13 +1,24 @@
 package php
 
-import "fmt"
+import (
+	"fmt"
+	basetype "github/MaminirinaEdwino/api-maker-cli/src/baseType"
+	"github/MaminirinaEdwino/api-maker-cli/src/utils"
+)
 
 func getModels() {
 
 }
 
-func getPages() {
+func createPage() basetype.Page {
+	var page basetype.Page
 
+	page.Name = utils.Scanner("Entrer le nom de la page : ")
+	for {
+		
+	}
+
+	return page
 }
 
 func getComponents() {

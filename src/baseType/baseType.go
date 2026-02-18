@@ -1,6 +1,5 @@
 package basetype
 
-
 type Attribut struct {
 	Nom  string
 	Type string
@@ -17,11 +16,26 @@ type Route struct {
 	Handler string
 }
 
-type Model struct{
-	Name string
+type Model struct {
+	Name     string
 	Attribut []Attribut
 }
 
-type Page struct{
-	
+type HtmlTag struct {
+	Name string
+	Type string
+}
+
+func (tag *HtmlTag) GetHtmlTag() string {
+	tagString := ""
+	switch tag.Type {
+	case "div":
+	case "h1":
+	}
+	return tagString
+}
+
+type Page struct {
+	Name    string
+	Content []string
 }
