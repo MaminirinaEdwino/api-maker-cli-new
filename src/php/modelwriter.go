@@ -2,13 +2,24 @@ package php
 
 import (
 	"fmt"
+	basetype "github/MaminirinaEdwino/api-maker-cli/src/baseType"
+	"github/MaminirinaEdwino/api-maker-cli/src/postgres"
 	"github/MaminirinaEdwino/api-maker-cli/src/utils"
 	"os"
 )
 
-func CreateDBFile(dbname string, projectname string) {
+
+
+func CreateDBFile(dbname string, projectname string, model []basetype.Model) {
 	file, err := os.Create(projectname+"/src/config/database.php")
 	utils.ErrorChecker(err)
+	createQuery := ""
+	for m := range model {
+		createQuery+=postgres.Create(model[m])
+		if m < len(model) {
+			createQuery+="\n"
+		}
+	}
 	fmt.Fprintf(file, `
 <?php
 class Database{
@@ -32,11 +43,10 @@ class Database{
         $this->getConnection();
         
         $query = "
-        
+        %s
         ";
         $result = pg_query($this->conn, $query);
     }
 }
-	`, dbname)
-
+	`, dbname, createQuery)
 }

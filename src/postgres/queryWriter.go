@@ -16,3 +16,20 @@ func Update(ep_name string, attr_list string, attrs []basetype.Attribut) string 
 func Delete(ep_name string) string {
 	return fmt.Sprintf("delete from %s where id = $1", ep_name)
 }
+
+
+func Create(model basetype.Model) string {
+	query := `
+create table %s (
+	%s
+)
+	`
+	subquery := ""
+	for a := range model.Attribut {
+		subquery+=model.Attribut[a].Nom+" "+model.Attribut[a].Type
+		if a != len(model.Attribut) - 1  {
+			subquery+=","
+		}
+	}
+	return fmt.Sprintf(query, model.Name, subquery)
+}
