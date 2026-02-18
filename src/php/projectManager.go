@@ -53,6 +53,16 @@ func createComponents() basetype.Component {
 	return component
 }
 
+func deleteComponent(componentList []basetype.Component, componentName string) []basetype.Component {
+	var tmp []basetype.Component
+	for c := range componentList {
+		if componentList[c].Name != componentName {
+			tmp = append(tmp, componentList[c])
+		}
+	}
+	return tmp
+}
+
 func createModel() basetype.Model {
 	var model basetype.Model
 	model.Name = utils.Scanner("Nom du model : ")
