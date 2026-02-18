@@ -134,7 +134,7 @@ func CreateWebAppProject() {
 	var model []basetype.Model
 	var pages []basetype.Page
 	var components []basetype.Component
-
+	var routes 
 	fmt.Println("Create a PHP WEB App")
 	action := ""
 	for action == "" {
@@ -159,6 +159,7 @@ func CreateWebAppProject() {
 		case "delete_model":
 			modelName := utils.Scanner("Model name : ")
 			model = deleteModel(model, modelName)
+		case "add_route": 
 		}
 	}
 	fmt.Println(projectName)
