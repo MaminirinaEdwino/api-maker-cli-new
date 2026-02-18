@@ -168,4 +168,5 @@ func CreateWebAppProject() {
 
 	CreateProjectStructure(projectName)
 	CreateDBFile(Dbname, projectName, model)
+	CreateMigrateDBFile(projectName)
 }
