@@ -4,12 +4,20 @@ import (
 	"github/MaminirinaEdwino/api-maker-cli/src/utils"
 	"os"
 )
-func CreateCoreFile(){
+func CreateTemplateRendererFile(projectName string){
+	file, err := os.Create(projectName+"/src/templaterenderer/templateRenderer.php")
+	utils.ErrorChecker(err)
+	file.WriteString(`
+<?php
 
-}
+class TemplateRender{
 
-func CreateTemplateRendererFile(){
-
+    public static function render(string $path, $param){
+        $params = $param;
+        include_once "./src/views".$path;
+    }
+}	
+`)
 }
 func CreateUtilsFile(projectName string){
 	file, err := os.Create(projectName+"/scr/core/utils/relativeRoutes.php")
