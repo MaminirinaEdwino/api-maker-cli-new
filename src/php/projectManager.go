@@ -37,6 +37,16 @@ func createPage() basetype.Page {
 	return page
 }
 
+func deletePage(pageList []basetype.Page, pageName string) []basetype.Page {
+	var tmp []basetype.Page
+	for p := range pageList {
+		if pageList[p].Name != pageName {
+			tmp = append(tmp, pageList[p])
+		}
+	}
+	return tmp
+}
+
 func createComponents() basetype.Component {
 	var component basetype.Component
 	component.Name = utils.Scanner("Nom du composant")
