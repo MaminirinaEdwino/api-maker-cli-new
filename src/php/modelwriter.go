@@ -62,3 +62,34 @@ $database->getConnection();
 $database->initDatabaseStructure();
 	`)
 }
+
+func UpperCaseFirstLetter(chain string) string {
+	tab := strings.Split(chain, "")
+	tab[0] = strings.ToUpper(tab[0])
+	return strings.Join(tab, "")
+}
+
+func CreateModelFile(projectName string, model basetype.Model){
+	file, err := os.Create(projectName+"/src/models/"+model.Name+".php")
+	utils.ErrorChecker(err)
+	file.WriteString("<?php\n")
+	file.WriteString(fmt.Sprintf("class %s {\n", UpperCaseFirstLetter(model.Name)))
+
+	for _,attr := range model.Attribut {
+		fmt.Fprintf(file, "private %s $%s;\n", attr.Type ,attr.Nom )
+	}
+
+	fmt.Fprint(file, "public function __construct(){}")
+	for _, attr := range model.Attribut {
+		fmt.Fprintf(file, `
+	public function get%s(){
+		return $this->%s; 
+	}
+	public function set%s($%s){
+		$this->%s = $%s;
+		return $this;
+	}
+	`, UpperCaseFirstLetter(attr.Nom), attr.Nom, UpperCaseFirstLetter(attr.Nom), attr.Nom, attr.Nom, attr.Nom)
+	}
+	file.WriteString("\n}\n")
+}
