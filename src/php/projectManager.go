@@ -10,12 +10,27 @@ func getModels() {
 
 }
 
+func getHtmlTag() basetype.HtmlTag {
+	var tag basetype.HtmlTag
+	tag.Type = ""
+	for tag.Type == "" {
+		tag.Type = utils.Scanner("HTML tag type : ")
+	}
+	return tag
+}
+
 func createPage() basetype.Page {
 	var page basetype.Page
 
 	page.Name = utils.Scanner("Entrer le nom de la page : ")
-	for {
-		
+	contentType := ""
+	for contentType == "" {
+		contentType = utils.Scanner("Content type : ")
+		switch contentType {
+		case "htmltag":
+			tag := getHtmlTag()
+			page.Content = append(page.Content, tag.GetHtmlTag())
+		}
 	}
 
 	return page

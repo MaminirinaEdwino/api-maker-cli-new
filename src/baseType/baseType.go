@@ -22,7 +22,6 @@ type Model struct {
 }
 
 type HtmlTag struct {
-	Name string
 	Type string
 }
 
